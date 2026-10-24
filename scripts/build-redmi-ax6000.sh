@@ -236,7 +236,12 @@ fi
 while IFS=$'\t' read -r asset_name asset_file asset_url asset_sha; do
   asset_path="$cache/$asset_file"
   if [[ ! -f "$asset_path" ]]; then
-    curl -fL --retry 3 --connect-timeout 20 "$asset_url" -o "$asset_path.part"
+    bundled_asset="$repo/configs/ax6000/data-snapshots/$asset_file"
+    if [[ -f "$bundled_asset" ]]; then
+      cp "$bundled_asset" "$asset_path.part"
+    else
+      curl -fL --retry 3 --connect-timeout 20 "$asset_url" -o "$asset_path.part"
+    fi
     printf '%s  %s\n' "$asset_sha" "$asset_path.part" | shasum -a 256 -c -
     mv "$asset_path.part" "$asset_path"
   fi

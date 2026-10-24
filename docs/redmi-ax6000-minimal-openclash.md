@@ -210,6 +210,8 @@ ABI 检查。`kernel` 和 `libc` 由固件预装，仓库默认不将它们列�
 固件；`github-build.json` 记录构建提交与运行编号。任务不连接或刷写路由器。
 
 Actions 缓存源码下载和 ccache，不复用旧 rootfs、旧镜像或软件包 staging 目录。
+国内网段和 Telegram 网段的原始 URL 会变化，因此对应锁定快照随仓库提交，
+全新构建优先使用这些快照并核对摘要，不依赖某一次 Actions 的缓存。
 Go bootstrap 与本机测试用的 Mihomo、AdGuard Home 按 Linux 平台单独固定摘要。
 Linux 不应用仅供 macOS 主机构建的 001–004、007、021 补丁；导出产物中的
 `build-patches/receipt.json` 记录实际应用与跳过的补丁及摘要。
