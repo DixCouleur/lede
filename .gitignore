@@ -29,4 +29,10 @@ git-src
 .project
 .cproject
 .ccache
+/.build-ax6000/
+/artifacts/ax6000/
 .vscode*
+
+# Local Python bytecode is not firmware source.
+__pycache__/
+*.py[cod]
