@@ -1,0 +1,64 @@
+--- a/feeds/luci/applications/luci-app-openclash/root/usr/share/openclash/openclash.sh
++++ b/feeds/luci/applications/luci-app-openclash/root/usr/share/openclash/openclash.sh
+@@ -45,8 +45,18 @@
+    done >/dev/null 2>&1
+ }
+ 
++config_integrity_check()
++{
++   ruby -E UTF-8 /usr/share/openclash/ax6000-subscription-check.rb "$CFG_FILE" "$CONFIG_FILE" >> "$LOG_FILE" 2>&1
++}
++
+ config_test()
+ {
++   # Reject incomplete downloads before serial validation interrupts production.
++   if ! config_integrity_check; then
++      LOG_ERROR "Config File【$name】Failed Subscription Integrity Check, Keep Current Config!"
++      return 2
++   fi
+    if [ -f "$CLASH" ]; then
+       LOG_OUT "Config File Download Successful, Test If There is Any Errors..."
+       test_info=$(/usr/share/openclash/ax6000-core-check.sh "$CLASH" "$CLASH_CONFIG" "$CFG_FILE" "$SECRET_KEY")
+@@ -184,10 +194,16 @@
+ {
+    LOG_OUT "Config File Test Successful, Check If There is Any Update..."
+    sed -i 's/!<str> /!!str /g' "$CFG_FILE" >/dev/null 2>&1
++   if [ "$only_download" -eq 0 ]; then
++      config_cus_up
++   fi
++   # Filtering must not turn a valid download into an unusable subscription.
++   if ! config_integrity_check; then
++      LOG_ERROR "Config File【$name】Failed Subscription Integrity Check, Keep Current Config!"
++      config_error
++      return 1
++   fi
+    if [ -f "$CONFIG_FILE" ]; then
+-      if [ "$only_download" -eq 0 ]; then
+-         config_cus_up
+-      fi
+       cmp -s "$CONFIG_FILE" "$CFG_FILE"
+       if [ "$?" -ne 0 ]; then
+          LOG_OUT "Config File【$name】Are Updates, Start Replacing..."
+@@ -200,9 +216,6 @@
+       fi
+    else
+       LOG_OUT "Config File【$name】Download Successful, Start To Create..."
+-      if [ "$only_download" -eq 0 ]; then
+-         config_cus_up
+-      fi
+       mv "$CFG_FILE" "$CONFIG_FILE" 2>/dev/null
+       LOG_OUT "Config File【$name】Update Successful!"
+    fi
+@@ -447,7 +460,11 @@
+    if [ "$DOWNLOAD_RESULT" -eq 0 ] && [ -s "$CFG_FILE" ]; then
+       #prevent ruby unexpected error
+       config_test
+-      if [ $? -ne 0 ]; then
++      local test_status=$?
++      if [ "$test_status" -eq 2 ]; then
++         config_error
++         return
++      elif [ "$test_status" -ne 0 ]; then
+          LOG_ERROR "Config File Tested Failed, Please Check The Log Infos!"
+          LOG_ERROR "Config File【$name】Subscribed Failed, Trying to Download Without Agent..."
+          config_download_direct

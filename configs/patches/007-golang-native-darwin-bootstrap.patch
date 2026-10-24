@@ -1,0 +1,63 @@
+--- a/feeds/packages/lang/golang/golang/Makefile
++++ b/feeds/packages/lang/golang/golang/Makefile
+@@ -329,6 +329,18 @@
+ 	mkdir -p "$(GO_BUILD_CACHE_DIR)"
+ endef
+ 
++# Modern Darwin rejects old bootstrap executables without LC_UUID.
++# A checked native Go >= 1.24 can bootstrap the pinned host compiler directly.
++ifeq ($(GO_HOST_OS_ARCH),darwin_arm64)
++ifneq ($(call qstrip,$(CONFIG_GOLANG_EXTERNAL_BOOTSTRAP_ROOT)),)
++define Host/Compile
++	$(call GoCompiler/Host/Make, \
++		GOROOT_BOOTSTRAP="$(BOOTSTRAP_ROOT_DIR)" \
++		$(if $(HOST_GO_ENABLE_PIE),GO_LDFLAGS="-buildmode pie") \
++		$(HOST_GO_VARS) \
++	)
++endef
++else
+ define Host/Compile
+ 	$(call GoCompiler/Bootstrap/Make, \
+ 		$(HOST_GO_VARS) \
+@@ -361,6 +373,41 @@
+ 		$(HOST_GO_VARS) \
+ 	)
+ endef
++endif
++else
++define Host/Compile
++	$(call GoCompiler/Bootstrap/Make, \
++		$(HOST_GO_VARS) \
++		CC="$(HOSTCC_NOCACHE) -std=gnu17" \
++	)
++
++	$(call GoCompiler/Bootstrap-1.17/Make, \
++		GOROOT_BOOTSTRAP="$(BOOTSTRAP_ROOT_DIR)" \
++		$(HOST_GO_VARS) \
++	)
++
++	$(call GoCompiler/Bootstrap-1.20/Make, \
++		GOROOT_BOOTSTRAP="$(BOOTSTRAP_1_17_BUILD_DIR)" \
++		$(HOST_GO_VARS) \
++	)
++
++	$(call GoCompiler/Bootstrap-1.22/Make, \
++		GOROOT_BOOTSTRAP="$(BOOTSTRAP_1_20_BUILD_DIR)" \
++		$(HOST_GO_VARS) \
++	)
++
++	$(call GoCompiler/Bootstrap-1.24/Make, \
++		GOROOT_BOOTSTRAP="$(BOOTSTRAP_1_22_BUILD_DIR)" \
++		$(HOST_GO_VARS) \
++	)
++
++	$(call GoCompiler/Host/Make, \
++		GOROOT_BOOTSTRAP="$(BOOTSTRAP_1_24_BUILD_DIR)" \
++		$(if $(HOST_GO_ENABLE_PIE),GO_LDFLAGS="-buildmode pie") \
++		$(HOST_GO_VARS) \
++	)
++endef
++endif
+ 
+ # if host and target os/arch are the same,
+ # when go compiles a program, it will use the host std lib

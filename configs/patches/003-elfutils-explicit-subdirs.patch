@@ -1,0 +1,9 @@
+--- a/tools/elfutils/Makefile
++++ b/tools/elfutils/Makefile
+@@ -72,6 +72,7 @@ export $(PKG_GNULIB_BASE)_xsize=$(HOST_BUILD_DIR)/$(PKG_GNULIB_BASE)/$(PKG_GNULIB_BASE)_la-xsize.o
+ 
+ HOST_MAKE_FLAGS += \
++	SUBDIRS='$(PKG_SUBDIRS)' \
+ 	am__CONFIG_DISTCLEAN_FILES= \
+ 	DEFAULT_INCLUDES='-iquote . -I$$$$(top_builddir) -I$$$$(top_srcdir)/$(PKG_GNULIB_BASE)' \
+ 	AM_LDFLAGS='$$$$(STACK_USAGE_NO_ERROR)' \

@@ -1,0 +1,9 @@
+config turboacc 'global'
+	option set '1'
+
+config turboacc 'config'
+	option fastpath 'flow_offloading'
+	option fastpath_fo_hw '1'
+	option fastpath_mh_eth_hnat_wed '1'
+	option fullcone '0'
+	option tcpcca 'bbr'

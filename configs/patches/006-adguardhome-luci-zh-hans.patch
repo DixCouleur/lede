@@ -1,0 +1,111 @@
+--- /dev/null
++++ b/feeds/luci/applications/luci-app-adguardhome/po/zh_Hans/adguardhome.po
+@@ -0,0 +1,108 @@
++msgid ""
++msgstr ""
++"Content-Type: text/plain; charset=UTF-8\n"
++"Language: zh_Hans\n"
++"Plural-Forms: nplurals=1; plural=0;\n"
++
++msgid "AdGuard Home"
++msgstr "AdGuard Home"
++
++msgid "Advanced Settings"
++msgstr "高级设置"
++
++msgid "Configuration file"
++msgstr "配置文件"
++
++msgid "Configuration file must be stored in its own directory, and not in '/etc'."
++msgstr "配置文件必须放在独立目录中，不能直接放在 /etc。"
++
++msgid "Directory where filters, logs, and statistics are stored."
++msgstr "存放过滤规则、日志和统计数据的目录。"
++
++msgid "File System Access"
++msgstr "文件访问权限"
++
++msgid "Files and directories that AdGuard Home should have read-only or read-write access to."
++msgstr "允许 AdGuard Home 只读或读写访问的文件和目录。"
++
++msgid "General Settings"
++msgstr "常规设置"
++
++msgid "Go environment variables that tune garbage collector and memory management."
++msgstr "用于调整垃圾回收和内存管理的 Go 环境变量。"
++
++msgid "Grant permissions for the AdGuard Home LuCI app"
++msgstr "授予 AdGuard Home LuCI 应用访问权限"
++
++msgid "Group the service runs under."
++msgstr "运行服务使用的用户组。"
++
++msgid "If empty, defaults to"
++msgstr "留空时默认为"
++
++msgid "Modify at your own risk."
++msgstr "请谨慎修改。"
++
++msgid "Not running"
++msgstr "未运行"
++
++msgid "Parent directory will be owned by the service user."
++msgstr "父目录归服务用户所有。"
++
++msgid "Path must be absolute."
++msgstr "必须使用绝对路径。"
++
++msgid "Path must not end with a slash."
++msgstr "路径不能以斜杠结尾。"
++
++msgid "Read-only access"
++msgstr "只读访问"
++
++msgid "Read-write access"
++msgstr "读写访问"
++
++msgid "Running"
++msgstr "运行中"
++
++msgid "Service Status"
++msgstr "服务状态"
++
++msgid "Service group"
++msgstr "服务用户组"
++
++msgid "Service user"
++msgstr "服务用户"
++
++msgid "The maximum number of operating system threads that can execute user-level Go code simultaneously."
++msgstr "可同时执行 Go 代码的操作系统线程数上限。"
++
++msgid "Tunes the garbage collector's aggressiveness by setting the percentage of heap growth allowed before the next collection cycle triggers."
++msgstr "设置触发下一次垃圾回收之前允许堆内存增长的百分比。"
++
++msgid "User the service runs under."
++msgstr "运行服务使用的用户。"
++
++msgid "Verbose logging"
++msgstr "详细日志"
++
++msgid "Version"
++msgstr "版本"
++
++msgid "Will be owned by the service user."
++msgstr "归服务用户所有。"
++
++msgid "Working directory"
++msgstr "工作目录"
++
++msgid "unset"
++msgstr "未设置"
++
++msgid "unset and 100"
++msgstr "未设置，默认 100"
++
++msgid "unset and matching the number of CPUs"
++msgstr "未设置，默认与 CPU 数量一致"
++
++msgid "A soft memory cap for the Go runtime, allowing the garbage collector to run more frequently as usage approaches the limit to prevent Out-of-Memory (OOM) kills."
++msgstr "Go 运行时的内存软上限。接近上限时会更频繁地回收内存，以减少内存不足导致的进程终止。"
++

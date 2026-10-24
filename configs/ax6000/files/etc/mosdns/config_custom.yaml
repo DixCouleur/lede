@@ -1,0 +1,159 @@
+# Managed through the stock luci-app-mosdns Custom Config editor.
+# AdGuardHome filters first. Cache real answers only; never cache Fake-IP here.
+log:
+  level: error
+  file: /var/log/mosdns.log
+  size: 1
+  backups: 0
+api:
+  http: 127.0.0.1:9091
+plugins:
+  - tag: stats_collector
+    type: stats_api
+    args:
+      capacity: 500
+  - tag: geosite_cn
+    type: domain_set
+    args:
+      files: [/etc/mosdns/data/direct.txt]
+  - tag: geosite_proxy
+    type: domain_set
+    args:
+      files: [/etc/mosdns/data/proxy.txt]
+  - tag: geoip_cn
+    type: ip_set
+    args:
+      files: [/etc/mosdns/data/cn-ip.txt]
+  - tag: whitelist
+    type: domain_set
+    args:
+      files: [/etc/mosdns/rule/whitelist.txt]
+  - tag: greylist
+    type: domain_set
+    args:
+      files: [/etc/mosdns/rule/greylist.txt]
+  - tag: ddnslist
+    type: domain_set
+    args:
+      files: [/etc/mosdns/rule/ddnslist.txt]
+  - tag: hosts
+    type: hosts
+    args:
+      files: [/etc/mosdns/rule/hosts.txt]
+  - tag: redirect
+    type: redirect
+    args:
+      files: [/etc/mosdns/rule/redirect.txt]
+  - tag: local_ptr
+    type: domain_set
+    args:
+      files: [/etc/mosdns/rule/local-ptr.txt]
+  - tag: lazy_cache
+    type: cache
+    args:
+      size: 2048
+      lazy_cache_ttl: 86400
+  - tag: forward_local
+    type: forward
+    args:
+      concurrent: 3
+      upstreams:
+        - tag: alidns_h3
+          addr: h3://223.5.5.5/dns-query
+        - tag: alidns_backup_h3
+          addr: h3://223.6.6.6/dns-query
+        - tag: dnspod_udp
+          addr: 119.29.29.29
+  - tag: forward_fakeip
+    type: forward
+    args:
+      concurrent: 1
+      upstreams:
+        - addr: 127.0.0.1:7874
+  - tag: direct_sequence
+    type: sequence
+    args:
+      - exec: $lazy_cache
+      - matches: has_resp
+        exec: accept
+      - exec: $forward_local
+      - exec: accept
+  - tag: fakeip_sequence
+    type: sequence
+    args:
+      - exec: $forward_fakeip
+      # Resolver failure triggers fallback; preserve other DNS response codes.
+      - matches: rcode 2
+        exec: drop_resp
+  - tag: proxy_fallback
+    type: fallback
+    args:
+      primary: fakeip_sequence
+      secondary: direct_sequence
+      threshold: 500
+      always_standby: false
+  - tag: proxy_sequence
+    type: sequence
+    args:
+      - exec: $proxy_fallback
+      - exec: accept
+  - tag: unknown_direct_sequence
+    type: sequence
+    args:
+      # Save the real answer inside this nested sequence before classification
+      # drops foreign answers. Fake-IP is obtained outside the cache scope.
+      - exec: $direct_sequence
+      - matches: resp_ip $geoip_cn
+        exec: accept
+      - exec: drop_resp
+  - tag: unknown_fallback
+    type: fallback
+    args:
+      primary: unknown_direct_sequence
+      secondary: proxy_sequence
+      threshold: 2000
+      always_standby: false
+  - tag: main_sequence
+    type: sequence
+    args:
+      - exec: $stats_collector
+      # Explicit user policy; reject before hosts, cache and routing rules.
+      - matches: qname full:local.adguard.org
+        exec: reject 5
+      - matches: qtype 28 64 65
+        exec: reject 0
+      - exec: $hosts
+      - matches: has_resp
+        exec: accept
+      - exec: $redirect
+      - matches: qname $local_ptr
+        exec: reject 3
+      - matches: qname $whitelist
+        exec: goto direct_sequence
+      - matches: qname $ddnslist
+        exec: $forward_local
+      - matches: qname $ddnslist
+        exec: ttl 5-5
+      - matches: qname $ddnslist
+        exec: accept
+      - matches: "!qtype 1"
+        exec: goto direct_sequence
+      - matches: qname $greylist
+        exec: goto proxy_sequence
+      - matches: qname $geosite_cn
+        exec: goto direct_sequence
+      - matches: qname $geosite_proxy
+        exec: goto proxy_sequence
+      # Fallback clones contexts, so the real-answer cache cannot save Fake-IP.
+      - exec: $unknown_fallback
+      - exec: accept
+  - tag: udp_server
+    type: udp_server
+    args:
+      entry: main_sequence
+      listen: 127.0.0.1:5335
+  - tag: tcp_server
+    type: tcp_server
+    args:
+      entry: main_sequence
+      listen: 127.0.0.1:5335

@@ -1,0 +1,10 @@
+--- a/feeds/luci/applications/luci-app-mosdns/root/etc/init.d/mosdns
++++ b/feeds/luci/applications/luci-app-mosdns/root/etc/init.d/mosdns
+@@ -806,6 +806,7 @@
+ }
+ 
+ reload_dnsmasq() {
++	[ -x /etc/init.d/dnsmasq ] || return 0
+ 	[ "$(/etc/init.d/dnsmasq status)" = "running" ] && /etc/init.d/dnsmasq reload
+ }
+ 

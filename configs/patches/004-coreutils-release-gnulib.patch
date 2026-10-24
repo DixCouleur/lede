@@ -1,0 +1,16 @@
+--- a/tools/coreutils/Makefile
++++ b/tools/coreutils/Makefile
+@@ -52,12 +52,10 @@ endef
+ 
+ define Host/Prepare
+ 	$(call Host/Prepare/Default)
+-	$(if $(QUILT),,$(call Host/Bootstrap))
++	# The release archive already contains its matching gnulib and private modules.
+ endef
+ 
+ define Host/Configure
+-	$(if $(QUILT),$(call Host/Bootstrap))
+-	$(foreach src,$(HOST_GNULIB_SKIP),mv -f $(HOST_BUILD_DIR)/$(src)~ $(HOST_BUILD_DIR)/$(src) || true; )
+ 	$(call Host/Configure/Default)
+ endef
+ 

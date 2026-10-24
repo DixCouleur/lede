@@ -1,0 +1,14 @@
+--- a/root/usr/share/ucode/luci/argon-palette.uc
++++ b/root/usr/share/ucode/luci/argon-palette.uc
+@@ -28,7 +28,10 @@
+ // SOFTWARE.
+ 
+ export function normalize_hex(value) {
+-	if (type(value) != 'string' || !match(value, /^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/))
++	if (type(value) != 'string')
++		return null;
++	const matched = match(value, /^#[0-9a-fA-F]{3}([0-9a-fA-F]{3})?$/);
++	if (!matched || matched[0] != value)
+ 		return null;
+ 	if (length(value) == 4)
+ 		value = '#' + substr(value, 1, 1) + substr(value, 1, 1) +

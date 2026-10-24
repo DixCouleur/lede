@@ -1,0 +1,11 @@
+--- a/feeds/luci/applications/luci-app-mosdns/htdocs/luci-static/resources/view/mosdns/rules.js
++++ b/feeds/luci/applications/luci-app-mosdns/htdocs/luci-static/resources/view/mosdns/rules.js
+@@ -7,7 +7,7 @@
+ return view.extend({
+ 	render() {
+ 		const m = new form.Map('mosdns', _('Rule Settings'),
+-			_('The list of rules only apply to \'Default Config\' profiles.'));
++			_('Rules apply to the default profile and custom profiles that reference these files.'));
+ 
+ 		const s = m.section(form.TypedSection);
+ 		s.anonymous = true;

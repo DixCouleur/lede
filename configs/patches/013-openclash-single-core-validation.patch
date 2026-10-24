@@ -1,0 +1,58 @@
+--- a/feeds/luci/applications/luci-app-openclash/root/etc/init.d/openclash
++++ b/feeds/luci/applications/luci-app-openclash/root/etc/init.d/openclash
+@@ -4,6 +4,17 @@
+ START=99
+ STOP=15
+ USE_PROCD=1
++
++# Gate before rc.common takes procd's lock; validator children already own it.
++if [ -z "$IPKG_INSTROOT" ] && [ "${AX6000_CORE_CHECK:-0}" != 1 ]; then
++   case "$action" in
++      start|stop|restart|reload|boot|shutdown)
++         mkdir -p /tmp/lock
++         exec 885>/tmp/lock/openclash-core-operation.lock
++         flock -x 885
++         ;;
++   esac
++fi
+ 
+ . $IPKG_INSTROOT/usr/share/openclash/openclash_ps.sh
+ . $IPKG_INSTROOT/usr/share/openclash/ruby.sh
+@@ -825,6 +836,7 @@
+    chown root:root "$CLASH"
+    procd_open_instance "openclash"
+    procd_set_param env SAFE_PATHS=/usr/share/openclash:/etc/ssl
++   procd_append_param env GOGC=50 GOMEMLIMIT=134217728
+    procd_append_param env CLASH_AGE_SECRET_KEY="$SECRET_KEY"
+    procd_append_param env OIX_TOKEN="$OIX_TOKEN"
+    procd_append_param env OIX_PARAMS="$OIX_PARAMS"
+@@ -3780,7 +3792,7 @@
+ 
+       del_cron
+       clear_overwrite_set
+-      rm -rf /tmp/openclash_jobs
++      [ "${AX6000_CORE_CHECK:-0}" = 1 ] || rm -rf /tmp/openclash_jobs
+       rm -rf /tmp/yaml_*
+    } >/dev/null 2>&1
+ 
+--- a/feeds/luci/applications/luci-app-openclash/root/usr/share/openclash/openclash.sh
++++ b/feeds/luci/applications/luci-app-openclash/root/usr/share/openclash/openclash.sh
+@@ -49,7 +49,8 @@
+ {
+    if [ -f "$CLASH" ]; then
+       LOG_OUT "Config File Download Successful, Test If There is Any Errors..."
+-      test_info=$($CLASH -t -d $CLASH_CONFIG -f "$CFG_FILE" -age-secret-key "$SECRET_KEY")
++      test_info=$(/usr/share/openclash/ax6000-core-check.sh "$CLASH" "$CLASH_CONFIG" "$CFG_FILE" "$SECRET_KEY")
++      local test_status=$?
+       local IFS=$'\n'
+       for i in $test_info; do
+          if [ -n "$(echo "$i" |grep "configuration file")" ]; then
+@@ -59,7 +60,7 @@
+             echo "$i" >> "$LOG_FILE"
+          fi
+       done
+-      if [ -n "$(echo "$test_info" |grep "test failed")" ]; then
++      if [ "$test_status" -ne 0 ] || [ -n "$(echo "$test_info" |grep "test failed")" ]; then
+          return 1
+       fi
+    else

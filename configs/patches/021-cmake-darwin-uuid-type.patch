@@ -1,0 +1,18 @@
+--- /dev/null
++++ b/tools/cmake/patches/170-darwin-uuid-type.patch
+@@ -0,0 +1,15 @@
++--- a/Source/CPack/cmCPackDragNDropGenerator.cxx
+++++ b/Source/CPack/cmCPackDragNDropGenerator.cxx
++@@ -29,6 +29,12 @@
++ #include "cmXMLWriter.h"
++ 
++ #if HAVE_CoreServices
+++// util-linux uuid.h can shadow the SDK header in OpenWrt host includes.
+++#  include <sys/_types.h>
+++#  ifndef _UUID_STRING_T
+++#    define _UUID_STRING_T
+++typedef __darwin_uuid_string_t uuid_string_t;
+++#  endif
++ // For the old LocaleStringToLangAndRegionCodes() function, to convert
++ // to the old Script Manager RegionCode values needed for the 'LPic' data
++ // structure used for generating multi-lingual SLAs.

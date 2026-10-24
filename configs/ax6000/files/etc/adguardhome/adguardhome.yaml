@@ -1,0 +1,63 @@
+http:
+  address: 0.0.0.0:3000
+users: []
+language: zh-cn
+dns:
+  bind_hosts:
+    - 0.0.0.0
+  port: 53
+  upstream_dns:
+    - 127.0.0.1:5335
+  fallback_dns: []
+  bootstrap_dns:
+    - 223.5.5.5
+    - 119.29.29.29
+  upstream_timeout: 5s
+  use_private_ptr_resolvers: false
+  local_ptr_upstreams: []
+  cache_enabled: false
+  cache_size: 4194304
+  cache_optimistic: false
+  ratelimit: 0
+  enable_dnssec: true
+  serve_plain_dns: true
+  aaaa_disabled: true
+  hostsfile_enabled: true
+querylog:
+  dir_path: /var/lib/adguardhome/querylog
+  enabled: true
+  file_enabled: false
+  interval: 24h
+  size_memory: 1000
+statistics:
+  dir_path: /var/lib/adguardhome/statistics
+  enabled: true
+  interval: 24h
+filters:
+  - enabled: true
+    url: https://adguardteam.github.io/HostlistsRegistry/assets/filter_1.txt
+    name: AdGuard DNS filter
+    id: 1
+filtering:
+  protection_enabled: true
+  filtering_enabled: true
+  filters_update_interval: 24
+  blocking_mode: default
+dhcp:
+  enabled: true
+  interface_name: br-lan
+  local_domain_name: lan
+  dhcpv4:
+    gateway_ip: 192.168.199.1
+    subnet_mask: 255.255.255.0
+    range_start: 192.168.199.100
+    range_end: 192.168.199.249
+    lease_duration: 43200
+    icmp_timeout_msec: 1000
+  dhcpv6:
+    # An empty range disables DHCPv6 while keeping DHCPv4 available.
+    range_start: ''
+    lease_duration: 43200
+    ra_slaac_only: false
+    ra_allow_slaac: false
+schema_version: 34

@@ -1,0 +1,30 @@
+{
+  "source_sha256": "cfb4e3be914b5c887b9f67807171ec2887d34690252e4f011266d60fc6849602",
+  "output_sha256": "2d7e8dfc3aed3c961baf7b58f8b8609a872127d9ed1a6ba35c3d3c3a92ac3b9c",
+  "categories": [
+    "apple",
+    "apple-cn",
+    "category-games",
+    "category-public-tracker",
+    "cn",
+    "geolocation-!cn",
+    "gfw",
+    "google",
+    "google-cn",
+    "private"
+  ],
+  "test_references": [
+    "apple",
+    "apple-cn",
+    "category-games",
+    "category-games@cn",
+    "category-public-tracker",
+    "cn",
+    "geolocation-!cn",
+    "gfw",
+    "google",
+    "google-cn",
+    "private"
+  ],
+  "reason": "Current subscription uses cn, gfw and geolocation-!cn. Retain OpenClash custom rule/DNS/fake-IP references, plus apple/private DNS categories. AdGuard Home handles ad filtering; unused categories are omitted."
+}

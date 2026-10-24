@@ -1,0 +1,27 @@
+--- a/feeds/luci/applications/luci-app-openclash/root/usr/share/openclash/yml_change.sh
++++ b/feeds/luci/applications/luci-app-openclash/root/usr/share/openclash/yml_change.sh
+@@ -784,11 +784,11 @@
+       end
+ 
+       # proxy-server-nameserver
+-      local_exclude = (%x{ls -l /sys/class/net/ |awk '{print \$9}'  2>&1}.each_line.map(&:strip) + ['h3=', 'skip-cert-verify=', 'ecs=', 'ecs-override=', 'disable-ipv6=', 'disable-ipv4=', 'disable-qtype-', 'disable-reuse='] + ['utun', 'tailscale0', 'docker0', 'tun163', 'br-lan', 'mihomo']).uniq.join('|')
++      local_exclude = (%x{ls -l /sys/class/net/ |awk '{print \$9}'  2>&1}.each_line.map(&:strip) + ['h3=', 'skip-cert-verify=', 'ecs=', 'ecs-override=', 'disable-ipv6=', 'disable-ipv4=', 'disable-qtype-', 'disable-reuse='] + ['DIRECT', 'utun', 'tailscale0', 'docker0', 'tun163', 'br-lan', 'mihomo']).uniq.join('|')
+       non_domain_reg = /^dhcp:\/\/|^system($|:\/\/)|([0-9a-zA-Z-]{1,}\.)+([a-zA-Z]{2,})/
+       proxied_server_reg = /^[^#&]+#(?:(?:#{local_exclude})[^&]*&)*(?:(?!(?:#{local_exclude}))[^&]+)/
+       servers_to_check = Value.dig('dns', 'nameserver').to_a | Value.dig('dns', 'fallback').to_a | Value.dig('dns', 'default-nameserver').to_a
+-      default_proxy_servers = servers_to_check.reject { |s| s.match?(non_domain_reg) }
++      default_proxy_servers = servers_to_check.reject { |s| s.match?(non_domain_reg) || s.match?(proxied_server_reg) }
+       if ! default_proxy_servers.any? || default_proxy_servers.all? { |x| x.match?(proxied_server_reg) }
+          default_proxy_servers = ['114.114.114.114', '119.29.29.29', '8.8.8.8', '1.1.1.1']
+       end
+--- a/feeds/luci/applications/luci-app-openclash/root/etc/init.d/openclash
++++ b/feeds/luci/applications/luci-app-openclash/root/etc/init.d/openclash
+@@ -840,7 +840,7 @@
+    procd_append_param env CLASH_AGE_SECRET_KEY="$SECRET_KEY"
+    procd_append_param env OIX_TOKEN="$OIX_TOKEN"
+    procd_append_param env OIX_PARAMS="$OIX_PARAMS"
+-   procd_set_param command /bin/sh -c "exec $CLASH -d $CLASH_CONFIG -f \"$CONFIG_FILE\" >> $LOG_FILE 2>&1"
++   procd_set_param command /usr/share/openclash/ax6000-core-run.sh "$CLASH" -d "$CLASH_CONFIG" -f "$CONFIG_FILE"
+    procd_set_param user "root"
+    procd_set_param group "nogroup"
+    procd_set_param limits nproc="unlimited" as="unlimited" memlock="unlimited" nofile="1000000 1000000"

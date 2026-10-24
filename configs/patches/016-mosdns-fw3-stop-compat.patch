@@ -1,0 +1,26 @@
+--- a/feeds/luci/applications/luci-app-mosdns/root/etc/init.d/mosdns
++++ b/feeds/luci/applications/luci-app-mosdns/root/etc/init.d/mosdns
+@@ -857,8 +857,9 @@
+ 
+ 	# dns hijack
+ 	if [ "$local_dns_redirect" -eq 1 ] && [ -f "/sbin/fw4" ]; then
+-		command -v nft >/dev/null 2>&1 && ! nft --check list table inet mosdns > "/dev/null" 2>&1 || \
+-			nft delete table inet mosdns
++		if command -v nft >/dev/null 2>&1; then
++			! nft --check list table inet mosdns >/dev/null 2>&1 || nft delete table inet mosdns
++		fi
+ 		nft add table inet mosdns
+ 		nft add chain inet mosdns prerouting "{ type nat hook prerouting priority -95; policy accept; }"
+ 		nft add rule inet mosdns prerouting "meta nfproto { ipv4, ipv6 } udp dport 53 counter redirect to :$listen_port comment \"DNS HIJACK\""
+@@ -889,8 +890,9 @@
+ 	config_load "mosdns"
+ 	config_foreach get_config "mosdns"
+ 	[ "$enabled" -eq "0" ] && restore_dhcp_setting
+-	command -v nft >/dev/null 2>&1 && ! nft --check list table inet mosdns > "/dev/null" 2>&1 || \
+-		nft delete table inet mosdns
++	if command -v nft >/dev/null 2>&1; then
++		! nft --check list table inet mosdns >/dev/null 2>&1 || nft delete table inet mosdns
++	fi
+ 	reload_dnsmasq
+ 	delcron
+ }

@@ -1,0 +1,122 @@
+{
+  "lede": "cbe28467faac4df239ff11fe7880310dd63f8735",
+  "kernel": "6.12.112",
+  "feeds": {
+    "packages": "0ede3e2278aac10f391ab58e6ba9d8b5577cf9d0",
+    "luci": "c80fbeccffd148e269e2ca807a41da645a832b6d",
+    "routing": "2d0f967bd6bd95d4c0d3c330e4713e79d75b4c54",
+    "telephony": "d3bcb153813b1ff34b3dd0f1bf0dc913984f2921",
+    "helloworld": "9213963c6a798658c55c7402f3ae7db81d891256"
+  },
+  "openclash": "0.48.002",
+  "argon": {
+    "version": "3.1.0",
+    "release": "1",
+    "url": "https://codeload.github.com/jerrykuku/luci-theme-argon/tar.gz/refs/tags/v3.1.0",
+    "sha256": "5b504551ea6dcdc79a5103906240c26e4837e5d15902d8d52869d68bf24fb4f0",
+    "source_patch_sha256": "c12b5c74f22bdea6d3069d3fb1d6a44e57b45b6c1d47ef7ac94b5f6130785516"
+  },
+  "mihomo": {
+    "version": "1.19.33",
+    "url": "https://github.com/MetaCubeX/mihomo/releases/download/v1.19.33/mihomo-linux-arm64-v1.19.33.gz",
+    "sha256": "ba408b317080ee265c46cb923a50018c1b82cbd708551cdd46a1e3e307396187",
+    "elf_sha256": "8c73570d9a5f388bc2f58eee0b347ccfab84fb3cf1a0f8f2cf5eac7005fbcdc0",
+    "host_test": {
+      "url": "https://github.com/MetaCubeX/mihomo/releases/download/v1.19.33/mihomo-darwin-arm64-v1.19.33.gz",
+      "sha256": "060b64b0f2c9a310831db0fe4adb2878de67bfa606c311813c1f13966aa504b6",
+      "platforms": {
+        "linux_amd64": {
+          "url": "https://github.com/MetaCubeX/mihomo/releases/download/v1.19.33/mihomo-linux-amd64-v1.19.33.gz",
+          "sha256": "132f6f3edf9a65e62f04853aed3358472e0b2b7666daa8419edfa2ddf5bb6323"
+        }
+      }
+    }
+  },
+  "adguardhome": {
+    "version": "0.107.79",
+    "source_sha256": "5f4fa119f24ea741bb8cecfa74203165fe6b86b904cef05ff429fb227b07d425",
+    "frontend_sha256": "30184c157d4aefe5371b575a43c0ab5a7314aef039a820cc421ea67bab994ce8",
+    "host_test": {
+      "url": "https://github.com/AdguardTeam/AdGuardHome/releases/download/v0.107.79/AdGuardHome_darwin_arm64.zip",
+      "sha256": "916f50bcc16b452c63ab8289f523a3c637e84933460a0ae7525fec03e31de867",
+      "platforms": {
+        "linux_amd64": {
+          "url": "https://github.com/AdguardTeam/AdGuardHome/releases/download/v0.107.79/AdGuardHome_linux_amd64.tar.gz",
+          "sha256": "c48f4a43000665484c5ec28177de11a004759b620dae8f77b2aabefc9ef3687f"
+        }
+      }
+    }
+  },
+  "luci_adguardhome": {
+    "repository": "https://github.com/rufengsuixing/luci-app-adguardhome",
+    "revision": "37fdf502b99328b37c9ef4c4387f069f67253f85",
+    "version": "1.8",
+    "release": "12",
+    "url": "https://codeload.github.com/rufengsuixing/luci-app-adguardhome/tar.gz/37fdf502b99328b37c9ef4c4387f069f67253f85",
+    "sha256": "ef6c75c798837d6ffa40a0e812218df9753716cc3853a70f7ed49dc7cf87cb35"
+  },
+  "go_bootstrap": {
+    "version": "1.27.3",
+    "url": "https://go.dev/dl/go1.27.3.darwin-arm64.tar.gz",
+    "sha256": "dd3908cf20959d798c1e06ebe5b72213f0505ce01373b40ce3110975a6cd99c2",
+    "platforms": {
+      "linux_amd64": {
+        "url": "https://go.dev/dl/go1.27.3.linux-amd64.tar.gz",
+        "sha256": "65efbc80fdc1fa2cd2631cad5b481777a68e8725f34e89f50fc6ac714e379b40"
+      }
+    }
+  },
+  "mosdns": {
+    "version": "5.3.4",
+    "release": "14",
+    "source_sha256": "0302a685db2a6c3c09af7bf4ff0dffd24f1e583383a47f064564f5270033671b",
+    "luci_version": "1.7.14",
+    "luci_feed_revision": "c80fbeccffd148e269e2ca807a41da645a832b6d",
+    "proxy_ip_source": "https://core.telegram.org/resources/cidr.txt",
+    "proxy_ip_source_sha256": "3ecd072cedf72eceee6961b18a51e37f905d5ce4a656a5d24cf5fea63e6ec651"
+  },
+  "build_id": "20261024-upstream",
+  "assets": {
+    "zashboard": {
+      "version": "3.29.1",
+      "filename": "zashboard-v3.29.1-cdn-fonts.zip",
+      "url": "https://github.com/Zephyruso/zashboard/releases/download/v3.29.1/dist-cdn-fonts.zip",
+      "sha256": "7c9edba8e7de4303b962ec682c3d16cf119bb775ce4683bcfb49822890a4edc3"
+    },
+    "geosite": {
+      "version": "202610222206",
+      "filename": "geosite-202610222206.dat",
+      "url": "https://github.com/Loyalsoldier/v2ray-rules-dat/releases/download/202610222206/geosite.dat",
+      "sha256": "cfb4e3be914b5c887b9f67807171ec2887d34690252e4f011266d60fc6849602"
+    },
+    "cn_ipv6": {
+      "filename": "cn-ipv6-20261024.txt",
+      "url": "https://ispip.clang.cn/all_cn_ipv6.txt",
+      "sha256": "e46531e46cade88b37052031b9053fb0051accfb51982fc8322f65d6938c08f2"
+    },
+    "cn_ipv4": {
+      "filename": "cn-ipv4-20261024.txt",
+      "url": "https://ispip.clang.cn/all_cn.txt",
+      "sha256": "00e85dd62858a33568ca11b1174c92293266c0c64ea213aa6390376aaa02843e"
+    },
+    "country_mmdb": {
+      "revision": "fa049a8d083073de5f02f65dc2a9664127b51aca",
+      "filename": "Country-lite-fa049a8d.mmdb",
+      "url": "https://raw.githubusercontent.com/alecthw/mmdb_china_ip_list/fa049a8d083073de5f02f65dc2a9664127b51aca/lite/Country.mmdb",
+      "sha256": "5ef321bb00e8b1ebf11df4b44928531656ea961ccef409c58979fa991401b239"
+    },
+    "telegram": {
+      "filename": "telegram-cidr-20261024.txt",
+      "url": "https://core.telegram.org/resources/cidr.txt",
+      "sha256": "3ecd072cedf72eceee6961b18a51e37f905d5ce4a656a5d24cf5fea63e6ec651"
+    }
+  },
+  "source_repositories": {
+    "lede": "https://github.com/coolsnowwolf/lede.git",
+    "packages": "https://github.com/coolsnowwolf/packages.git",
+    "luci": "https://github.com/coolsnowwolf/luci.git",
+    "routing": "https://github.com/coolsnowwolf/routing.git",
+    "telephony": "https://github.com/coolsnowwolf/telephony.git",
+    "helloworld": "https://github.com/fw876/helloworld.git"
+  }
+}

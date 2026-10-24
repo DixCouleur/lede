@@ -1,0 +1,12 @@
+#!/bin/sh
+# Reapply after netifd interface updates without restarting IPv4 services.
+case "$ACTION" in ifup|ifupdate) ;; *) exit 0 ;; esac
+[ -f /etc/sysctl.d/99-ax6000-ipv4-only.conf ] || exit 0
+for setting in /proc/sys/net/ipv6/conf/*/disable_ipv6; do
+    [ ! -f "$setting" ] || echo 1 > "$setting"
+done
+for option in forwarding accept_ra autoconf; do
+    for setting in /proc/sys/net/ipv6/conf/*/"$option"; do
+        [ ! -f "$setting" ] || echo 0 > "$setting"
+    done
+done

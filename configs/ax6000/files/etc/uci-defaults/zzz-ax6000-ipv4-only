@@ -1,0 +1,68 @@
+#!/bin/sh
+# Apply after the basic AX6000 defaults; preserve IPv4 addressing and DHCP.
+. /lib/functions.sh
+disable_interface_ipv6() {
+    local section="$1" proto
+    config_get proto "$section" proto
+    case "$proto" in
+        dhcpv6|6in4|6to4|6rd|dslite|map|464xlat)
+            uci set "network.$section.auto=0"
+            uci set "network.$section.disabled=1"
+            ;;
+    esac
+    uci set "network.$section.ipv6=0"
+    uci set "network.$section.delegate=0"
+    for option in ip6assign ip6addr ip6gw ip6hint ip6class ip6ifaceid ip6prefix; do
+        uci -q delete "network.$section.$option" || true
+    done
+}
+disable_device_ipv6() { uci set "network.$1.ipv6=0"; }
+config_load network
+config_foreach disable_interface_ipv6 interface
+config_foreach disable_device_ipv6 device
+uci -q delete network.globals.ula_prefix || true
+for device in eth0 lo; do
+    section="ax6000_ipv4_$device"
+    uci set "network.$section=device"
+    uci set "network.$section.name=$device"
+    uci set "network.$section.ipv6=0"
+done
+disable_dhcp_ipv6() {
+    local section="$1"
+    uci set "dhcp.$section.dhcpv6=disabled"
+    uci set "dhcp.$section.ra=disabled"
+    uci set "dhcp.$section.ndp=disabled"
+    uci set "dhcp.$section.ra_slaac=0"
+    uci -q delete "dhcp.$section.ra_flags" || true
+}
+config_load dhcp
+config_foreach disable_dhcp_ipv6 dhcp
+disable_firewall_ipv6() { uci set "firewall.$1.disable_ipv6=1"; }
+disable_ipv6_rule() {
+    local section="$1" family
+    config_get family "$section" family
+    [ "$family" != ipv6 ] || uci set "firewall.$section.enabled=0"
+}
+config_load firewall
+config_foreach disable_firewall_ipv6 defaults
+config_foreach disable_ipv6_rule rule
+disable_http_ipv6() {
+    local section="$1" option value values
+    for option in listen_http listen_https; do
+        config_get values "$section" "$option"
+        for value in $values; do
+            case "$value" in
+                \[*\]:*|*:*:*) uci -q del_list "uhttpd.$section.$option=$value" || true ;;
+            esac
+        done
+    done
+}
+config_load uhttpd
+config_foreach disable_http_ipv6 uhttpd
+if uci -q get openclash.config >/dev/null; then
+    uci set openclash.config.ipv6_enable=0
+    uci set openclash.config.ipv6_dns=0
+fi
+for package in network dhcp firewall uhttpd openclash; do uci commit "$package"; done
+/etc/init.d/odhcpd disable
+exit 0

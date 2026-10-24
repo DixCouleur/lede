@@ -1,0 +1,29 @@
+--- a/feeds/packages/net/mosdns/Makefile
++++ b/feeds/packages/net/mosdns/Makefile
+@@ -6,7 +6,7 @@
+ 
+ PKG_NAME:=mosdns
+ PKG_VERSION:=5.3.4
+-PKG_RELEASE:=14
++PKG_RELEASE:=15
+ 
+ PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
+ PKG_SOURCE_URL:=https://codeload.github.com/IrineSistiana/mosdns/tar.gz/v$(PKG_VERSION)?
+--- /dev/null
++++ b/feeds/packages/net/mosdns/patches/227-fix-stats-api-classify-execution-errors-as-servfail.patch
+@@ -0,0 +1,15 @@
++--- a/plugin/executable/stats_api/stats_api.go
+++++ b/plugin/executable/stats_api/stats_api.go
++@@ -982,7 +982,11 @@
++ 	var answers []AnswerDTO
++ 	isBlocked := false
++ 
++-	if r == nil {
+++	// EntryHandler turns execution errors into SERVFAIL, even when no upstream succeeded.
+++	// A failed exchange is not an intentional local block.
+++	if err != nil {
+++		status = "SERVFAIL"
+++	} else if r == nil {
++ 		status = "DROPPED"
++ 		if !hasUpstream {
++ 			isBlocked = true

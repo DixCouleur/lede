@@ -1,0 +1,15 @@
+--- a/feeds/luci/applications/luci-app-turboacc/root/etc/init.d/turboacc
++++ b/feeds/luci/applications/luci-app-turboacc/root/etc/init.d/turboacc
+@@ -54,6 +54,12 @@ start_service() {
+ 
+ 	set_wed_wo() {
+ 		local target_value="$1"
++		# AX6000 WED attaches during driver probing, so persist the next boot choice.
++		if [ -x /usr/share/turboacc/ax6000-wed.sh ]; then
++			/usr/share/turboacc/ax6000-wed.sh "$target_value"
++			return
++		fi
++
+ 		local param_path
+ 		local current_value
+ 

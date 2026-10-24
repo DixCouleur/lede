@@ -1,0 +1,26 @@
+--- a/feeds/luci/applications/luci-app-openclash/root/etc/init.d/openclash
++++ b/feeds/luci/applications/luci-app-openclash/root/etc/init.d/openclash
+@@ -3924,6 +3924,10 @@
+ 
+       LOG_OUT "Step 6: Core Status Checking and Firewall Rules Setting..."
+       check_core_status "start" &
++      # Let the external validator await completion after procd commits service.
++      if [ -n "${AX6000_CORE_START_PID_FILE:-}" ]; then
++         echo "$!" > "$AX6000_CORE_START_PID_FILE"
++      fi
+ 
+       if [ "$ipv6_enable" -eq 0 ] && [ "$(uci -q get dhcp.lan.dhcpv6)" != "disabled" ] && [ -n "$(uci -q get dhcp.lan.dhcpv6)" ]; then
+          LOG_WARN "Please Note That Network May Abnormal With IPv6's DHCP Server"
+--- a/feeds/luci/applications/luci-app-openclash/root/usr/share/openclash/openclash.sh
++++ b/feeds/luci/applications/luci-app-openclash/root/usr/share/openclash/openclash.sh
+@@ -213,6 +213,10 @@
+       uci -q set openclash.config.config_path="$CONFIG_FILE"
+       uci commit openclash
+    fi
++   if [ "$CONFIG_FILE" == "$CONFIG_PATH" ]; then
++      # Even a deferred restart must regenerate the replaced runtime YAML.
++      rm -f /tmp/openclash.change
++   fi
+    if [ "$CONFIG_FILE" == "$CONFIG_PATH" ] && [ "$norestart" -eq 0 ]; then
+       restart=1
+    fi

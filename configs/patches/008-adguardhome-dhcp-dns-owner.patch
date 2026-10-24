@@ -1,0 +1,91 @@
+--- a/feeds/luci/applications/luci-app-openclash/root/etc/init.d/openclash
++++ b/feeds/luci/applications/luci-app-openclash/root/etc/init.d/openclash
+@@ -177,9 +177,14 @@
+ }
+ 
+ change_dnsmasq() {
++   if [ "$(uci_get_config "adguardhome_dns")" = "1" ]; then
++      ruby /usr/share/openclash/adguardhome_dns.rb proxy || {
++         LOG_OUT "AdGuard Home DNS switch failed; stopping OpenClash."
++         start_fail
++      }
++      return
++   fi
+    local dnsmasq_redirect="$1"
+-   # Keep AdGuard Home on port 53 while switching its dnsmasq backend.
+-   [ "$(uci_get_config "adguardhome_dns")" = "1" ] && dnsmasq_redirect=1
+    if ! /etc/init.d/dnsmasq enabled; then
+       return
+    fi
+@@ -230,6 +235,10 @@
+ 
+ revert_dnsmasq()
+ {
++   if [ "$(uci_get_config "adguardhome_dns")" = "1" ]; then
++      ruby /usr/share/openclash/adguardhome_dns.rb direct || LOG_OUT "AdGuard Home DNS restore failed."
++      return
++   fi
+    if ! /etc/init.d/dnsmasq enabled; then
+       return
+    fi
+@@ -1333,6 +1342,7 @@
+    fi
+ 
+    DNSPORT=$(uci -q get dhcp.@dnsmasq[0].port)
++   [ "$(uci_get_config "adguardhome_dns")" != "1" ] || DNSPORT=53
+    if [ -z "$DNSPORT" ]; then
+       DNSPORT=$(netstat -nlp |grep -E '127.0.0.1:.*dnsmasq' |awk -F '127.0.0.1:' '{print $2}' |awk '{print $1}' |head -1 || echo 53)
+    fi
+@@ -2178,6 +2188,7 @@
+    fi
+ 
+    DNSPORT=$(uci -q get dhcp.@dnsmasq[0].port)
++   [ "$(uci_get_config "adguardhome_dns")" != "1" ] || DNSPORT=53
+    if [ -z "$DNSPORT" ]; then
+       DNSPORT=$(netstat -nlp |grep -E '127.0.0.1:.*dnsmasq' |awk -F '127.0.0.1:' '{print $2}' |awk '{print $1}' |head -1 || echo 53)
+    fi
+@@ -3506,6 +3517,7 @@
+    http_port=$(uci_get_config "http_port")
+    socks_port=$(uci_get_config "socks_port")
+    enable_redirect_dns=$(uci_get_config "enable_redirect_dns" || echo 1)
++   [ "$(uci_get_config "adguardhome_dns")" != "1" ] || enable_redirect_dns=0
+    if [ "$(uci_get_config "fakeip_range")"  == "0" ]; then
+       fakeip_range=$(ruby_read "$RAW_CONFIG_FILE" "['dns']['fake-ip-range']")
+    else
+--- a/feeds/luci/applications/luci-app-openclash/Makefile
++++ b/feeds/luci/applications/luci-app-openclash/Makefile
+@@ -27,12 +27,6 @@
+ 	config PACKAGE_iptables-mod-extra
+ 	default y if ! PACKAGE_firewall4
+ 
+-	config PACKAGE_dnsmasq_full_ipset
+-	default y if ! PACKAGE_firewall4
+-
+-	config PACKAGE_dnsmasq_full_nftset
+-	default y if PACKAGE_firewall4
+-
+ 	config PACKAGE_ipset
+ 	default y if ! PACKAGE_firewall4
+ endef
+@@ -42,7 +36,7 @@
+ 	SUBMENU:=3. Applications
+ 	TITLE:=LuCI support for clash
+ 	PKGARCH:=all
+-	DEPENDS:=+dnsmasq-full +bash +curl +ca-bundle +ip-full \
++	DEPENDS:=+adguardhome +ruby-json +bash +curl +ca-bundle +ip-full \
+ 	+ruby +ruby-yaml +kmod-tun +unzip
+ 	MAINTAINER:=vernesong
+ endef
+--- a/feeds/packages/net/adguardhome/files/adguardhome.init
++++ b/feeds/packages/net/adguardhome/files/adguardhome.init
+@@ -46,6 +46,10 @@
+ 	# Compatibility with older configs
+ 	[ -n "$config" ] && config_file="$config"
+ 	[ -n "$workdir" ] && work_dir="$workdir"
++
++	if [ -x /usr/share/adguardhome/ax6000-prepare.sh ]; then
++		/usr/share/adguardhome/ax6000-prepare.sh "$config_file" "$work_dir" "$user" "$group" || return 1
++	fi
+ 
+ 	local config_dir
+ 	config_dir=$(dirname "$config_file")
