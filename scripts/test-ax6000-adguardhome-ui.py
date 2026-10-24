@@ -77,8 +77,12 @@ def main(binary, helper):
                         time.sleep(0.1)
                 else:
                     raise RuntimeError("Web listener did not start")
-                lan_ip = subprocess.check_output(["ipconfig", "getifaddr", "en0"], text=True).strip()
-                assert lan_ip
+                # UDP connect selects the local route/address without sending data.
+                # This works on Linux and macOS, without assuming an interface name.
+                with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as route:
+                    route.connect(("192.0.2.1", 9))
+                    lan_ip = route.getsockname()[0]
+                assert lan_ip and not lan_ip.startswith("127.")
                 for host in ["127.0.0.1", lan_ip]:
                     with opener.open(f"http://{host}:{http_port}/", timeout=3) as response:
                         assert response.status == 200
