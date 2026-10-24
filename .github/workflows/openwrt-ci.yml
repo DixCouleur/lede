@@ -1,107 +1,160 @@
-# 
-# <https://github.com/KFERMercer/OpenWrt-CI>
-#
-# Copyright (C) 2019 P3TERX
-#
-# Copyright (C) 2020 KFERMercer
-#
-name: OpenWrt-CI
+name: AX6000 Daily Firmware
 
 on:
   schedule:
-    - cron: 0 20 * * *
+    # 04:30 Asia/Shanghai. Scheduled runs use this repository's default branch.
+    - cron: '30 20 * * *'
+  workflow_dispatch:
+  push:
+    branches: [master]
+    paths:
+      - '.github/workflows/openwrt-ci.yml'
+      - 'configs/**'
+      - 'scripts/*ax6000*'
 
 permissions:
   contents: read
 
+concurrency:
+  group: ax6000-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
-
-  build_openwrt:
-
-    name: Build OpenWrt Firmware
-
-    runs-on: ubuntu-22.04
-
+  firmware:
+    name: Build and verify AX6000
+    runs-on: ubuntu-24.04
+    timeout-minutes: 350
+    env:
+      DEBIAN_FRONTEND: noninteractive
+      AX6000_JOBS: '3'
+      AX6000_CCACHE: '1'
+      CCACHE_MAXSIZE: 3G
+      CCACHE_COMPRESS: '1'
     steps:
-      - name: Space cleanup and Initialization environment
+      - name: Check out build configuration
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Reclaim runner disk space
+        run: |
+          sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc \
+            /usr/local/.ghcup /usr/local/share/powershell /usr/local/swift \
+            /usr/local/share/chromium /opt/hostedtoolcache/CodeQL
+          docker image prune --all --force
+          df -h .
+          available=$(df -Pk . | awk 'END {print $4}')
+          test "$available" -ge 31457280
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential clang flex bison gawk gcc-multilib g++-multilib \
+            gettext git libncurses-dev libssl-dev python3-setuptools \
+            python3-dev python3-pyelftools rsync swig unzip zlib1g-dev \
+            file wget curl libelf-dev xz-utils bzip2 pkgconf libtool \
+            autoconf automake autopoint texinfo gperf help2man subversion \
+            squashfs-tools cmake ninja-build ccache ruby libyaml-dev \
+            libgmp-dev libmpfr-dev libmpc-dev liblzo2-dev uuid-dev
+
+      - name: Set up build Python
+        uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+        with:
+          python-version: '3.11'
+
+      - name: Identify locked build
+        id: build
+        run: |
+          python3 - <<'PYCI'
+          import json, os
+          from pathlib import Path
+          lock = json.loads(Path('configs/redmi-ax6000-build.lock.json').read_text())
+          build_id = lock['build_id']
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write('id=' + build_id + '\n')
+              output.write('tree=.build-ax6000/mount/lede-' + build_id + '\n')
+              output.write('out=artifacts/ax6000/releases/' + build_id + '\n')
+          PYCI
+
+      - name: Restore source downloads and compiler cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            .build-ax6000/downloads
+            .build-ax6000/ccache
+            .build-ax6000/*.gz
+            .build-ax6000/*.zip
+            .build-ax6000/*.dat
+            .build-ax6000/*.mmdb
+            .build-ax6000/*.txt
+          key: ax6000-ubuntu24-${{ hashFiles('configs/redmi-ax6000-build.lock.json', 'configs/patches/**', 'configs/ax6000/*.patch') }}-${{ github.run_id }}
+          restore-keys: |
+            ax6000-ubuntu24-${{ hashFiles('configs/redmi-ax6000-build.lock.json', 'configs/patches/**', 'configs/ax6000/*.patch') }}-
+            ax6000-ubuntu24-
+
+      - name: Prepare pinned source and validate configuration
+        run: bash scripts/build-redmi-ax6000.sh prepare
+
+      - name: Validate DNS, subscription and service behavior
         env:
-          DEBIAN_FRONTEND: noninteractive
+          BUILD_TREE: ${{ steps.build.outputs.tree }}
+        run: python3 scripts/test-ax6000-host.py --tree "$BUILD_TREE"
+
+      - name: Download pinned package sources
+        run: bash scripts/build-redmi-ax6000.sh download
+
+      - name: Compile and verify firmware and package indexes
+        run: bash scripts/build-redmi-ax6000.sh build
+
+      - name: Record build provenance
+        if: success()
+        env:
+          OUTPUT_DIR: ${{ steps.build.outputs.out }}
         run: |
-          docker image prune -f
-          sudo -E rm -rf /usr/share/dotnet /etc/mysql /etc/php /etc/apt/sources.list.d /usr/local/lib/android
-          sudo -E apt-mark hold grub-efi-amd64-signed
-          sudo -E apt update
-          sudo -E apt -y purge azure-cli* docker* ghc* zulu* llvm* firefox google* dotnet* powershell* openjdk* mysql* php* mongodb* dotnet* snap*
-          sudo -E apt -y full-upgrade
-          sudo -E apt -y install ack antlr3 asciidoc autoconf automake autopoint binutils bison build-essential bzip2 ccache clang cmake cpio curl device-tree-compiler flex gawk gcc-multilib g++-multilib gettext genisoimage git gperf haveged help2man intltool libc6-dev-i386 libelf-dev libfuse-dev libglib2.0-dev libgmp3-dev libltdl-dev libmpc-dev libmpfr-dev libncurses5-dev libncursesw5-dev libpython3-dev libreadline-dev libssl-dev libtool llvm lrzsz msmtp ninja-build p7zip p7zip-full patch pkgconf python3 python3-pyelftools python3-setuptools qemu-utils rsync scons squashfs-tools subversion swig texinfo uglifyjs upx-ucl unzip vim wget xmlto xxd zlib1g-dev
-          sudo -E systemctl daemon-reload
-          sudo -E apt -y autoremove --purge
-          sudo -E apt clean
-          sudo -E timedatectl set-timezone "Asia/Shanghai"
+          python3 - <<'PYCI'
+          import json, os
+          from pathlib import Path
+          record = {key: os.environ[key] for key in
+                    ['GITHUB_REPOSITORY', 'GITHUB_SHA', 'GITHUB_RUN_ID', 'GITHUB_RUN_ATTEMPT', 'GITHUB_EVENT_NAME']}
+          record['status'] = 'built_and_verified'
+          record['router_flashed'] = False
+          (Path(os.environ['OUTPUT_DIR']) / 'github-build.json').write_text(json.dumps(record, indent=2) + '\n')
+          PYCI
+          cat "$OUTPUT_DIR/SHA256SUMS" >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Checkout OpenWrt
-        uses: actions/checkout@v4
-
-      - name: Free Disk Space (Ubuntu)
-        uses: jlumbroso/free-disk-space@main
+      - name: Upload verified firmware and matching opkg repository
+        if: success()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          # this might remove tools that are actually needed,
-          # if set to "true" but frees about 6 GB
-          tool-cache: true
-          # all of these default to true, but feel free to set to
-          # "false" if necessary for your workflow
-          android: true
-          dotnet: true
-          haskell: true
-          large-packages: true
-          swap-storage: true
+          name: AX6000-${{ steps.build.outputs.id }}-${{ github.run_number }}
+          retention-days: 3
+          if-no-files-found: error
+          compression-level: 0
+          path: |
+            ${{ steps.build.outputs.out }}/*.bin
+            ${{ steps.build.outputs.out }}/SHA256SUMS
+            ${{ steps.build.outputs.out }}/*.json
+            ${{ steps.build.outputs.out }}/*.config
+            ${{ steps.build.outputs.out }}/*.seed
+            ${{ steps.build.outputs.out }}/*.manifest
+            ${{ steps.build.outputs.out }}/*.buildinfo
+            ${{ steps.build.outputs.out }}/README.md
+            ${{ steps.build.outputs.out }}/verification.txt
+            ${{ steps.build.outputs.out }}/source-SHA256SUMS
+            ${{ steps.build.outputs.out }}/build-patches
+            ${{ steps.build.outputs.out }}/opkg-repository
 
-      - name: Update feeds
-        run: |
-          sed -i 's/#src-git helloworld/src-git helloworld/g' ./feeds.conf.default
-          ./scripts/feeds update -a
-          ./scripts/feeds install -a
-
-      - name: Generate configuration file
-        run: make defconfig
-
-      - name: Download packages
-        run: make download -j16
-
-      - name: Compile firmware
-        run: |
-          make -j$(nproc) || make -j1 V=s
-          echo "======================="
-          echo "Space usage:"
-          echo "======================="
-          df -h
-          echo "======================="
-          du -h --max-depth=1 ./ --exclude=build_dir --exclude=bin
-          du -h --max-depth=1 ./build_dir
-          du -h --max-depth=1 ./bin
-
-      - name: Prepare artifact
-        run: |
-          mkdir -p ./artifact/package
-          mkdir -p ./artifact/buildinfo
-          rm -rf $(find ./bin/targets/ -type d -name "packages")
-          cp -rf $(find ./bin/packages/ -type f -name "*.ipk") ./artifact/package/
-          cp -rf $(find ./bin/targets/ -type f -name "*.buildinfo" -o -name "*.manifest") ./artifact/buildinfo/
-
-      - name: Upload buildinfo
-        uses: actions/upload-artifact@v4
+      - name: Upload diagnostics
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: OpenWrt_buildinfo
-          path: ./artifact/buildinfo/
-
-      - name: Upload package
-        uses: actions/upload-artifact@v4
-        with:
-          name: OpenWrt_package
-          path: ./artifact/package/
-
-      - name: Upload firmware
-        uses: actions/upload-artifact@v4
-        with:
-          name: OpenWrt_firmware
-          path: ./bin/targets/
+          name: AX6000-logs-${{ github.run_number }}-${{ github.run_attempt }}
+          retention-days: 3
+          if-no-files-found: warn
+          path: |
+            artifacts/ax6000/releases/*/logs
+            artifacts/ax6000/releases/*/verification.txt
+            .build-ax6000/mount/lede-*/.config
+            .build-ax6000/mount/lede-*/logs
